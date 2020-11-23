@@ -131,7 +131,9 @@ class PyTorchDeepSpeech(SpeechRecognizerMixin, PyTorchEstimator):
 
         # Super initialization
         super().__init__(
+            model=None,
             clip_values=clip_values,
+            channels_first=None,
             preprocessing_defences=preprocessing_defences,
             postprocessing_defences=postprocessing_defences,
             preprocessing=preprocessing,
@@ -157,6 +159,8 @@ class PyTorchDeepSpeech(SpeechRecognizerMixin, PyTorchEstimator):
         else:
             cuda_idx = torch.cuda.current_device()
             self._device = torch.device("cuda:{}".format(cuda_idx))
+
+        self._input_shape = None
 
         # Load model
         if model is None:
@@ -657,6 +661,15 @@ class PyTorchDeepSpeech(SpeechRecognizerMixin, PyTorchEstimator):
         inputs, targets, input_percentages, target_sizes = _collate_fn(batch)
 
         return inputs, targets, input_percentages, target_sizes, batch_idx
+
+    @property
+    def input_shape(self) -> Tuple[int, ...]:
+        """
+        Return the shape of one input sample.
+
+        :return: Shape of one input sample.
+        """
+        return self._input_shape  # type: ignore
 
     @property
     def model(self) -> "DeepSpeech":

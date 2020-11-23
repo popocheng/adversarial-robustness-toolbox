@@ -22,7 +22,7 @@ import logging
 import numpy as np
 import pytest
 
-from art.defences.preprocessor import AudioFilterPyTorch
+from art.defences.preprocessor import LFilterPyTorch
 from tests.utils import ARTTestException
 
 logger = logging.getLogger(__name__)
@@ -50,12 +50,12 @@ def test_audio_filter(fir_filter, art_warning, expected_values):
         numerator_coef = np.array([0.1, 0.2, -0.1, -0.2])
 
         if fir_filter:
-            denumerator_coef = np.array([1.0, 0.0, 0.0, 0.0])
+            denominator_coef = np.array([1.0, 0.0, 0.0, 0.0])
         else:
-            denumerator_coef = np.array([1.0, 0.1, 0.3, 0.4])
+            denominator_coef = np.array([1.0, 0.1, 0.3, 0.4])
 
         # Create filter
-        audio_filter = AudioFilterPyTorch(numerator_coef=numerator_coef, denumerator_coef=denumerator_coef)
+        audio_filter = LFilterPyTorch(numerator_coef=numerator_coef, denominator_coef=denominator_coef)
 
         # Apply filter
         result = audio_filter(x)
@@ -78,7 +78,7 @@ def test_default(art_warning):
         x = np.array([[0.37, 0.68, 0.63, 0.48, 0.48, 0.18, 0.19]])
 
         # Create filter
-        audio_filter = AudioFilterPyTorch()
+        audio_filter = LFilterPyTorch()
 
         # Apply filter
         result = audio_filter(x)
@@ -97,9 +97,9 @@ def test_triple_clip_values_error(art_warning):
     try:
         exc_msg = "`clip_values` should be a tuple of 2 floats containing the allowed data range."
         with pytest.raises(ValueError, match=exc_msg):
-            AudioFilterPyTorch(
+            LFilterPyTorch(
                 numerator_coef=np.array([0.1, 0.2, 0.3]),
-                denumerator_coef=np.array([0.1, 0.2, 0.3]),
+                denominator_coef=np.array([0.1, 0.2, 0.3]),
                 clip_values=(0, 1, 2),
             )
 
@@ -113,8 +113,8 @@ def test_relation_clip_values_error(art_warning):
     try:
         exc_msg = "Invalid `clip_values`: min >= max."
         with pytest.raises(ValueError, match=exc_msg):
-            AudioFilterPyTorch(
-                numerator_coef=np.array([0.1, 0.2, 0.3]), denumerator_coef=np.array([0.1, 0.2, 0.3]), clip_values=(1, 0)
+            LFilterPyTorch(
+                numerator_coef=np.array([0.1, 0.2, 0.3]), denominator_coef=np.array([0.1, 0.2, 0.3]), clip_values=(1, 0)
             )
 
     except ARTTestException as e:

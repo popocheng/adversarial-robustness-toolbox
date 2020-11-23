@@ -136,6 +136,7 @@ class TensorFlowLingvoAsr(SpeechRecognizerMixin, TensorFlowV2Estimator):
 
         # Super initialization
         super().__init__(
+            model=None,
             clip_values=clip_values,
             channels_first=channels_first,
             preprocessing_defences=preprocessing_defences,
@@ -145,6 +146,8 @@ class TensorFlowLingvoAsr(SpeechRecognizerMixin, TensorFlowV2Estimator):
         self.random_seed = random_seed
         if self.postprocessing_defences is not None:
             raise ValueError("This estimator does not support `postprocessing_defences`.")
+
+        self._input_shape = None
 
         # check required TensorFlow version
         if tf1.__version__ != "2.1.0":
@@ -186,6 +189,15 @@ class TensorFlowLingvoAsr(SpeechRecognizerMixin, TensorFlowV2Estimator):
         # add prediction and loss gradient ops to graph
         self._predict_batch_op = self._predict_batch(self._x_padded, self._y_target, self._mask_frequency)
         self._loss_gradient_op = self._loss_gradient(self._x_padded, self._y_target, self._mask_frequency)
+
+    @property
+    def input_shape(self) -> Tuple[int, ...]:
+        """
+        Return the shape of one input sample.
+
+        :return: Shape of one input sample.
+        """
+        return self._input_shape  # type: ignore
 
     @property
     def sess(self) -> "Session":
