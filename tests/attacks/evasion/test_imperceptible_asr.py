@@ -134,30 +134,19 @@ class TestImperceptibleASR:
         except ARTTestException as e:
             art_warning(e)
 
-    @pytest.mark.skipMlFramework("pytorch", "tensorflow1", "mxnet", "kerastf", "non_dl_frameworks")
-    def test_loss_gradient_masking_threshold(self, art_warning, asr_dummy_estimator, audio_batch_padded):
+    @pytest.mark.skipMlFramework("tensorflow", "mxnet", "kerastf", "non_dl_frameworks")
+    def test_loss_gradient_masking_threshold(self, art_warning, asr_dummy_estimator, audio_data):
         try:
-            import tensorflow.compat.v1 as tf1
-
-            tf1.reset_default_graph()
-
-            test_delta = audio_batch_padded
-            test_psd_maximum = np.ones((test_delta.shape[0], 28))
-            test_masking_threshold = np.zeros((test_delta.shape[0], 1025, 28))
+            test_input, _ = audio_data
+            test_delta = test_input * 0
 
             imperceptible_asr = ImperceptibleASR(
                 estimator=asr_dummy_estimator(), masker=PsychoacousticMasker(),
             )
-            feed_dict = {
-                imperceptible_asr._delta: test_delta,
-                imperceptible_asr._power_spectral_density_maximum_tf: test_psd_maximum,
-                imperceptible_asr._masking_threshold_tf: test_masking_threshold,
-            }
-            with tf1.Session() as sess:
-                loss_gradient, loss = sess.run(imperceptible_asr._loss_gradient_masking_threshold_op_tf, feed_dict)
+            loss_gradient, loss = imperceptible_asr._loss_gradient_masking_threshold(test_delta, test_input)
 
-            assert loss_gradient.shape == test_delta.shape
-            assert loss.ndim == 1 and loss.shape[0] == test_delta.shape[0]
+            assert [g.shape for g in loss_gradient] == [d.shape for d in test_delta]
+            assert loss.ndim == 1 and loss.shape == test_delta.shape
         except ARTTestException as e:
             art_warning(e)
 
